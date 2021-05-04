@@ -1,0 +1,50 @@
+### para generar verdad_campo.geojson se hace haciendo guardar como geojson desde QGIS
+
+####ARBOL
+####PolygonClassStatistics
+bash -c 'source ~/OTB-7.2.0-Linux64/otbenv.profile; otbcli_PolygonClassStatistics  -in /home/gisuba2021vv/TP2/imagenes/resultados/0000000000-0000000000_ndvi.tif \
+                        -vec /home/gisuba2021vv/TP2/verdad_campo.geojson \
+                        -field  id \
+                        -out /home/gisuba2021vv/TP2/imagenes/resultados/images_statistics_0000000000-0000000000_ndvi.xml'
+
+
+
+
+###SampleSelection
+bash -c 'source ~/OTB-7.2.0-Linux64/otbenv.profile; otbcli_SampleSelection -in /home/gisuba2021vv/TP2/imagenes/resultados/0000000000-0000000000_ndvi.tif \
+                       -vec /home/gisuba2021vv/TP2/verdad_campo.geojson \
+                       -instats /home/gisuba2021vv/TP2/imagenes/resultados/images_statistics_0000000000-0000000000_ndvi.xml \
+                       -field id \
+                       -strategy smallest \
+                       -outrates /home/gisuba2021vv/TP2/imagenes/resultados/rates.csv \
+                       -out /home/gisuba2021vv/TP2/imagenes/resultados/samples.sqlite'
+
+###SampleExtraction
+bash -c 'source ~/OTB-7.2.0-Linux64/otbenv.profile; otbcli_SampleExtraction -in /home/gisuba2021vv/TP2/imagenes/resultados/0000000000-0000000000_ndvi.tif \
+                        -vec /home/gisuba2021vv/TP2/imagenes/resultados/samples.sqlite \
+                        -outfield prefix \
+                        -outfield.prefix.name band_ \
+                        -field id'
+
+
+###ComputeImageStatistics
+bash -c 'source ~/OTB-7.2.0-Linux64/otbenv.profile; otbcli_ComputeImagesStatistics -il  /home/gisuba2021vv/TP2/imagenes/resultados/0000000000-0000000000_ndvi.tif \
+                               -out /home/gisuba2021vv/TP2/imagenes/resultados/images_statistics_0000000000-0000000000_ndvi.xml'
+
+
+ARBOL
+###TrainVectorClassifier
+bash -c 'source ~/OTB-7.2.0-Linux64/otbenv.profile; otbcli_TrainVectorClassifier -io.vd /home/gisuba2021vv/TP2/imagenes/resultados/samples.sqlite \
+                             -io.stats /home/gisuba2021vv/TP2/imagenes/resultados/images_statistics_0000000000-0000000000_ndvi.xml \
+                             -cfield id \
+                             -classifier dt \
+                             -classifier.dt.max 10 \
+                             -io.out /home/gisuba2021vv/TP2/imagenes/resultados/modeloArbol.txt \
+                             -io.confmatout /home/gisuba2021vv/TP2/imagenes/resultados/ConfusionMatrixArbol.csv \
+                             -feat band_0 band_1 band_2 band_3 band_4 band_5'
+
+###PREDICCION
+bash -c 'source ~/OTB-7.2.0-Linux64/otbenv.profile; otbcli_ImageClassifier -in /home/gisuba2021vv/TP2/imagenes/resultados/0000000000-0000010496_ndvi.tif \
+                       -imstat /home/gisuba2021vv/TP2/imagenes/resultados/images_statistics_aoi0.xml  \
+                       -model /home/gisuba2021vv/TP2/imagenes/resultados/modeloArbol.txt \
+                       -out /home/gisuba2021vv/TP2/imagenes/resultados/0000000000-0000010496_labeled_arbol.tif'
